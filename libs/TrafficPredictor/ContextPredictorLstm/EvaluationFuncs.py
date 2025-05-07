@@ -1,26 +1,40 @@
 import torch
+import torch.optim as optim
 import numpy as np
+
 from ..HelperFunctions import createDataLoaders
 
-def evaluateModel(model, validData, batch_size=4096):
-    source_data, target_data = validData
-    validation_loader = createDataLoaders(batch_size, (source_data, target_data), shuffle=False)
+def evaluateModel(traffic_predictor, test_data, batch_size=4096, verbose=True):
+    # Create data loader
+    validation_loader = createDataLoaders(batch_size=batch_size, dataset=test_data, shuffle=False)
+    
+    # Determine computation device
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    actual_traffic = []
-    predicted_traffic = []
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model.eval()  # Set the model to evaluation mode
-    for i, (batch_sources, batch_target) in enumerate(validation_loader): 
-        sources = batch_sources.permute(1, 0, 2).to(device)
-        targets = batch_target.permute(1, 0, 2).to(device)
-        outputs = model(src=sources, trg=targets, teacher_forcing_ratio=0.0)
+    # Storage for results
+    context_actual, context_predicted = [], []
 
-        targets = targets.permute(1, 0, 2).cpu().detach().numpy()
-        outputs = outputs.permute(1, 0, 2).cpu().detach().numpy()
+    # Iterate over validation data
+    for batch in validation_loader:
+        sources, targets = (data.to(device) for data in batch)
 
-        actual_traffic.append(targets)
-        predicted_traffic.append(outputs)
+        # Permute tensor dimensions for model input compatibility
+        sources, targets = map(lambda x: x.permute(1, 0, 2), (sources, targets))
 
-    #actual_traffic = np.concatenate(actual_traffic)
-    #predicted_traffic = np.concatenate(predicted_traffic)
-    return actual_traffic, predicted_traffic
+        # Get model predictions
+        pred_context = traffic_predictor(sources, targets, teacher_forcing_ratio=0.0)
+
+        # Store results
+        context_actual.append(targets.permute(1, 0, 2).cpu().detach().numpy())
+        context_predicted.append(pred_context.permute(1, 0, 2).cpu().detach().numpy())
+
+    # Concatenate results from all batches
+    context_actual = np.concatenate(context_actual)
+    context_predicted = np.concatenate(context_predicted)
+
+    results = {
+        'context_actual': context_actual,
+        'context_predicted': context_predicted 
+    }
+
+    return results

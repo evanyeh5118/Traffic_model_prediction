@@ -15,12 +15,13 @@ def PreparingDatasetHelper(dataUnit, params):
     if dataAugment == True:
         idxs = [i for i in range(lenSource, lenDataset - lenTarget)]
     else:
-        idxs = [i for i in range(int(lenSource/lenTarget)+1, int(np.floor(lenDataset / lenTarget)))]
+        idxs = [i*lenTarget for i in range(int(lenSource/lenTarget)+1, int(np.floor(lenDataset / lenTarget)))]
         
     for i in idxs:
         sources.append(contextData[i-lenSource:i])
         targets.append(contextData[i:i+lenTarget])
-        
+    #sources = np.concatenate(sources, axis=0)
+    #targets = np.concatenate(targets, axis=0)
     return (
         np.array(sources), 
         np.array(targets)

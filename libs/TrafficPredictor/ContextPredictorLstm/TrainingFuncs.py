@@ -10,8 +10,8 @@ def trainModelByDefaultSetting(lenSource, lenTarget, trainData, testData, verbos
     parameters = {
         "teacher_forcing_ratio" : 0.1,
         "batch_size": 4096,
-        "hidden_size": 12,
-        "num_layers": 6,
+        "hidden_size": 4,
+        "num_layers": 2,
         "dropout_rate": 0.0,
         "num_epochs": 50,
         "learning_rate": 0.001,
@@ -48,10 +48,10 @@ def trainModelHelper(parameters, model, criterion, optimizer, device, train_load
         model.train()
         total_train_loss = 0
         for source_train, target_train in train_loader:
-            #sources = source_train.permute(1, 0, 2).to(device) # Shape: (sequence_len, batch_size, features)
-            #targets = target_train.permute(1, 0, 2).to(device) # Shape: (sequence_len, batch_size, features)
-            sources = source_train.to(device)
-            targets = target_train.to(device)
+            sources = source_train.permute(1, 0, 2).to(device) # Shape: (sequence_len, batch_size, features)
+            targets = target_train.permute(1, 0, 2).to(device) # Shape: (sequence_len, batch_size, features)
+            #sources = source_train.to(device)
+            #targets = target_train.to(device)
             optimizer.zero_grad()
             outputs = model(
                 src=sources, 
@@ -71,15 +71,15 @@ def trainModelHelper(parameters, model, criterion, optimizer, device, train_load
         total_test_loss = 0
         with torch.no_grad():
             for source_test, targets_test in test_loader:
-                #sources = source_test.permute(1, 0, 2).to(device)
-                #targets = targets_test.permute(1, 0, 2).to(device)
+                sources = source_test.permute(1, 0, 2).to(device)
+                targets = targets_test.permute(1, 0, 2).to(device)
                 
                 outputs = model(
                     src=sources, 
                     trg=targets, 
                     teacher_forcing_ratio=0.0
                 )
-                print(outputs.shape)
+                #print(outputs.shape)
                 loss = criterion(outputs, targets)
                 total_test_loss += loss.item()
 
@@ -153,9 +153,8 @@ def createModel(parameters):
 class CustomLossFunction(nn.Module):
     def __init__(self):
         super(CustomLossFunction, self).__init__()
-        self.cross_entropy = nn.CrossEntropyLoss()
+        self.mse = nn.MSELoss()
 
-    def forward(self, 
-        outputs_traffic_class, traffic_class):
-        ce_loss = self.cross_entropy(outputs_traffic_class, traffic_class)
-        return ce_loss
+    def forward(self, outputs_traffic, traffics):
+        mse_loss = self.mse(outputs_traffic, traffics)
+        return mse_loss
