@@ -13,7 +13,7 @@ def getDefaultModelParams(len_source, len_target, dataset):
         "input_size":input_size,
         "output_size":output_size,
         "batch_size": 4096,
-        "hidden_size": 512,
+        "hidden_size": 128,
         "num_layers": 5,
         "dropout_rate": 0.9,
         "num_epochs": 50,
@@ -24,7 +24,7 @@ def getDefaultModelParams(len_source, len_target, dataset):
         "len_target": len_target,
         "num_classes": len_target+1,
         "train_ratio": 0.6,
-        "lambda_traffic_class": 1000, 
+        "lambda_traffic_class": 200, 
         "lambda_transmission": 100,
     }
     return parameters
