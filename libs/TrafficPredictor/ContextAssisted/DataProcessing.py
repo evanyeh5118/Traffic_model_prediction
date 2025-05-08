@@ -17,7 +17,6 @@ def PreparingDatasetHelper(dataUnit, params):
     smoothOrder = params['smoothOrder']
 
     lenDataset = dataUnit.dataLength
-    #contextData = dataUnit.getContextDataProcessed()
     contextData = dataUnit.getContextDataProcessedAndSmoothed(smoothFc, smoothOrder)
     transmissionFlags = dataUnit.getTransmissionFlags()
 
@@ -27,11 +26,10 @@ def PreparingDatasetHelper(dataUnit, params):
                 for i in range(lenSource, lenDataset - lenTarget)]
     else:
         idxs = [(i * lenTarget, FindLastTransmissionIdx(transmissionFlags, i * lenTarget)) 
-                for i in range(int(lenSource/lenTarget)+1, int(np.floor(lenDataset / lenTarget)))]
+                for i in range(int(lenSource/lenTarget), int(np.floor(lenDataset / lenTarget)))]
         
     for i, last_transmission_idx in idxs:
         sources.append(contextData[i-lenSource:i])
-        #sources.append(contextData[i:i+lenTarget])
         targets.append(contextData[i:i+lenTarget])
         transmissionsVector.append(transmissionFlags[i:i+lenTarget])
         trafficStatesSource.append(np.sum(transmissionFlags[i-lenSource:i]))

@@ -17,7 +17,7 @@ def evaluateModel(traffic_predictor, test_data, batch_size=4096, verbose=True):
     classDistribu_actual, classDistribu_predicted = [], []
     trafficSource_actual = []
     trafficTarget_actual, trafficTarget_predicted = [], []
-    #actual_context, predicted_context = [], []
+    contextTarget_actual, contextTarget_predicted = [], []
 
     # Iterate over validation data
     for batch in validation_loader:
@@ -27,7 +27,7 @@ def evaluateModel(traffic_predictor, test_data, batch_size=4096, verbose=True):
         sources, targets, last_trans_sources = map(lambda x: x.permute(1, 0, 2), (sources, targets, last_trans_sources))
 
         # Get model predictions
-        pred_trafficTarget, pred_classDistribu, pred_transmissions, _ = traffic_predictor(sources, last_trans_sources)
+        pred_trafficTarget, pred_classDistribu, pred_transmissions, pred_context = traffic_predictor(sources, last_trans_sources)
 
         # Store results
         transmissions_actual.append(transmissions.cpu().detach().numpy())
@@ -40,6 +40,9 @@ def evaluateModel(traffic_predictor, test_data, batch_size=4096, verbose=True):
         trafficTarget_actual.append(trafficsTarget.cpu().detach().numpy())
         trafficTarget_predicted.append(pred_trafficTarget.cpu().detach().numpy())
 
+        contextTarget_actual.append(sources.permute(1, 0, 2).cpu().detach().numpy())
+        contextTarget_predicted.append(pred_context.permute(1, 0, 2).cpu().detach().numpy())
+
     # Concatenate results from all batches
     transmissions_actual = np.concatenate(transmissions_actual)
     transmissions_predicted = np.concatenate(transmissions_predicted)
@@ -48,6 +51,8 @@ def evaluateModel(traffic_predictor, test_data, batch_size=4096, verbose=True):
     trafficSource_actual = np.concatenate(trafficSource_actual)
     trafficTarget_actual = np.concatenate(trafficTarget_actual)
     trafficTarget_predicted = np.concatenate(trafficTarget_predicted)
+    #contextTarget_actual = np.concatenate(contextTarget_actual)
+    #contextTarget_predicted = np.concatenate(contextTarget_predicted)
 
     results = {
         'transmissions_actual': transmissions_actual,
@@ -57,6 +62,8 @@ def evaluateModel(traffic_predictor, test_data, batch_size=4096, verbose=True):
         'trafficSource_actual': trafficSource_actual,
         'trafficTarget_actual': trafficTarget_actual,
         'trafficTarget_predicted': trafficTarget_predicted,
+        'contextTarget_actual': contextTarget_actual,
+        'contextTarget_predicted': contextTarget_predicted,
     }
 
     return results

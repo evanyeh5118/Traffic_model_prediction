@@ -112,17 +112,16 @@ class Seq2Seq(nn.Module):
         super(Seq2Seq, self).__init__()
         self.encoder = Encoder(input_dim, hidden_dim, n_layers, dropout)
         self.decoder = Decoder(output_dim, hidden_dim, n_layers, dropout)
-        self.output_dim = output_dim
 
     def forward(self, src, trg, teacher_forcing_ratio=0.5):
         # src: [src_len, batch_size, input_dim]
         # trg: [trg_len, batch_size, output_dim]
         _, hidden_states, cell_states = self.encoder(src)
 
-        trg_len, batch_size, _ = src.size()
-        outputs = torch.zeros(trg_len, batch_size, self.output_dim).to(src.device)
+        trg_len, batch_size, output_dim = trg.size()
+        outputs = torch.zeros(trg_len, batch_size, output_dim).to(src.device)
         #input = src[-1, :, :].unsqueeze(0)  # Start decoding from the last encoder state
-        input = torch.zeros(1, batch_size,  self.output_dim).to(src.device)
+        input = torch.zeros(1, batch_size, output_dim).to(src.device)
         for t in range(trg_len):
             output, hidden_states, cell_states = self.decoder(input, hidden_states, cell_states)
             outputs[t] = output

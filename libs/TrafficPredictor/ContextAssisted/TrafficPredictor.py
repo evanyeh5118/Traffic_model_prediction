@@ -110,8 +110,8 @@ class TrafficPredictorContextAssisted(nn.Module):
         # src: [src_len, batch_size, input_dim]
         # size: (len_seq, batch_size, dim)
         motion_predict = (self.M.unsqueeze(0) @ src.permute(2, 0, 1)).permute(1, 2, 0)
-        #motion_feature = torch.cat([motion_predict, last_trans_src], dim=0)
-        motion_feature = torch.cat([src, last_trans_src], dim=0)
+        motion_feature = torch.cat([motion_predict, last_trans_src], dim=0)
+        #motion_feature = torch.cat([src, last_trans_src], dim=0)
         db_features = self.ComputeDeadbandFeatures(motion_feature)
         traffic_est, traffic_class_est, transmission_est = self.dbf2traffic(db_features)
         traffic_est = self.reluOut(traffic_est)

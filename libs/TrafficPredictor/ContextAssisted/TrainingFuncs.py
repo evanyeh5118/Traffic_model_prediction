@@ -2,7 +2,8 @@ import torch
 import torch.optim as optim
 import copy
 
-from .TrafficPredictor import TrafficPredictorContextAssisted, CustomLossFunction
+#from .TrafficPredictor import TrafficPredictorContextAssisted, CustomLossFunction
+from .TrafficPredictorEnhanced import TrafficPredictorContextAssisted, CustomLossFunction
 from ..HelperFunctions import createDataLoaders, countModelParameters
 
 def getDefaultModelParams(len_source, len_target, dataset):
@@ -12,9 +13,9 @@ def getDefaultModelParams(len_source, len_target, dataset):
     parameters = {
         "input_size":input_size,
         "output_size":output_size,
-        "batch_size": 4096,
-        "hidden_size": 128,
-        "num_layers": 5,
+        "batch_size": 4096*2,
+        "hidden_size": 64,
+        "num_layers": 8,
         "dropout_rate": 0.9,
         "num_epochs": 50,
         "learning_rate": 0.005,
@@ -24,7 +25,7 @@ def getDefaultModelParams(len_source, len_target, dataset):
         "len_target": len_target,
         "num_classes": len_target+1,
         "train_ratio": 0.6,
-        "lambda_traffic_class": 200, 
+        "lambda_traffic_class": 10, 
         "lambda_transmission": 100,
     }
     return parameters

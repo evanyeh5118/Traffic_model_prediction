@@ -7,6 +7,7 @@ from ..HelperFunctions import createDataLoaders, countModelParameters
 
 
 def trainModelByDefaultSetting(lenSource, lenTarget, trainData, testData, verbose=False):
+    (sources, targets) = trainData
     parameters = {
         "teacher_forcing_ratio" : 0.1,
         "batch_size": 4096,
@@ -18,7 +19,6 @@ def trainModelByDefaultSetting(lenSource, lenTarget, trainData, testData, verbos
         "lenSource": lenSource,
         "lenTarget": lenTarget,
     }
-    (sources, targets) = trainData
     parameters['input_size'] = sources.shape[2]
     parameters['output_size'] = targets.shape[2]
     best_model, avg_train_loss_history, avg_test_loss_history = trainModel(parameters, trainData, testData, verbose=verbose)
@@ -48,17 +48,16 @@ def trainModelHelper(parameters, model, criterion, optimizer, device, train_load
         model.train()
         total_train_loss = 0
         for source_train, target_train in train_loader:
-            #sources = source_train.permute(1, 0, 2).to(device) # Shape: (sequence_len, batch_size, features)
-            #targets = target_train.permute(1, 0, 2).to(device) # Shape: (sequence_len, batch_size, features)
-            sources = source_train.to(device)
-            targets = target_train.to(device)
+            sources = source_train.permute(1, 0, 2).to(device) # Shape: (sequence_len, batch_size, features)
+            targets = target_train.permute(1, 0, 2).to(device) # Shape: (sequence_len, batch_size, features)
+            
             optimizer.zero_grad()
             outputs = model(
                 src=sources, 
                 trg=targets, 
                 teacher_forcing_ratio=teacher_forcing_ratio
             )
-            print(outputs.shape)
+
             loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()
@@ -71,15 +70,15 @@ def trainModelHelper(parameters, model, criterion, optimizer, device, train_load
         total_test_loss = 0
         with torch.no_grad():
             for source_test, targets_test in test_loader:
-                #sources = source_test.permute(1, 0, 2).to(device)
-                #targets = targets_test.permute(1, 0, 2).to(device)
+                sources = source_test.permute(1, 0, 2).to(device)
+                targets = targets_test.permute(1, 0, 2).to(device)
                 
                 outputs = model(
                     src=sources, 
                     trg=targets, 
                     teacher_forcing_ratio=0.0
                 )
-                print(outputs.shape)
+                
                 loss = criterion(outputs, targets)
                 total_test_loss += loss.item()
 
@@ -121,8 +120,7 @@ def prepareTraining(parameters, trainData, testData, verbose=False):
     model, device = createModel(parameters)
     size_model = countModelParameters(model)
     model.to(device)
-    #criterion = nn.MSELoss()
-    criterion = CustomLossFunction()
+    criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
     #==============================================
@@ -148,14 +146,3 @@ def createModel(parameters):
         inputFeatureSize, outputFeatureSize, hidden_size, num_layers, dropout_rate
     ).to(device)
     return model, device
-
-
-class CustomLossFunction(nn.Module):
-    def __init__(self):
-        super(CustomLossFunction, self).__init__()
-        self.cross_entropy = nn.CrossEntropyLoss()
-
-    def forward(self, 
-        outputs_traffic_class, traffic_class):
-        ce_loss = self.cross_entropy(outputs_traffic_class, traffic_class)
-        return ce_loss

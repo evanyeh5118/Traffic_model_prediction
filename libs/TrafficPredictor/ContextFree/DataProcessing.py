@@ -54,9 +54,9 @@ def PreparingDatasetHelper(dataUnit, parameters):
     dataSource = []
     dataTarget = []
     
-    for i in range(0, windowTraffic.shape[0]-lenSource-lenTarget):
-        row_source = windowTraffic[i:i+lenSource]
-        row_target = windowTraffic[i+lenSource:i+lenSource+lenTarget]
+    for i in range(lenSource, windowTraffic.shape[0]-lenTarget):
+        row_source = windowTraffic[i-lenSource:i]
+        row_target = windowTraffic[i:i+lenTarget]
         dataSource.append(row_source)
         dataTarget.append(row_target)
-    return np.expand_dims(np.array(dataSource), axis=-1), np.expand_dims(np.array(dataTarget).astype(int), axis=-1)
+    return np.expand_dims(np.array(dataSource), -1), np.expand_dims(np.array(dataTarget),-1)
