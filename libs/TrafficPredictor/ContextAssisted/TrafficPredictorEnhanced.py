@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
+from ..HelperFunctions import moving_average_smoothing_optimized, exponential_moving_average_smoothing
+
 class DeadFeaturesToTrafficLayer(nn.Module):
     def __init__(self, input_size, hidden_size, output_size, num_classes, target_len_seq, num_layers=1, dropout_rate=0.5):
         super(DeadFeaturesToTrafficLayer, self).__init__()
@@ -77,20 +79,16 @@ class ContextAdjuster(nn.Module):
 
         # Output Layer (same shape as input_dim but different src_len)
         self.output_layer = nn.Linear(hidden_dim, input_dim)
+        self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
         # Reshape input to (batch_size * src_len, input_dim)
         batch_size, src_len, input_dim = x.size()
         x = x.view(batch_size * src_len, input_dim)
-
-        # Apply MLP layers
         x = self.layers(x)
-
-        # Output Layer
         x = self.output_layer(x)
-
-        # Reshape to (batch_size, src_len2, input_dim)
         x = x.view(batch_size, src_len, input_dim)
+        x = self.sigmoid(x)
         return x
 
     def _initialize_weights(self):
@@ -112,9 +110,11 @@ class TrafficPredictorContextAssisted(nn.Module):
             num_layers=num_layers, dropout_rate=dropout_rate
         ).to(device)
         self.contextAdjuster = ContextAdjuster(
-            input_size, hidden_size, num_layers=num_layers, dropout=dropout_rate
+            input_size, 12, num_layers=num_layers, dropout=dropout_rate
         ).to(device)    
         self.reluOut = nn.ReLU()
+        #self.sigmoidContext = nn.Sigmoid()
+        #self.ruluContext = nn.ReLU()
         
     def Create_matrix(self, dt: float, L: int, degree: int) -> torch.Tensor:
         n_values = torch.arange(L, dtype=torch.float32)
@@ -156,9 +156,12 @@ class TrafficPredictorContextAssisted(nn.Module):
 
     def forward(self, src, last_trans_src):
         # src: [src_len, batch_size, input_dim]
-        motion_enhanced = self.contextAdjuster(src.permute(1, 0, 2)).permute(1, 0, 2)
+        #src_filtered = moving_average_smoothing_optimized(src)
+        #src_filtered = exponential_moving_average_smoothing(src, 0.2)
         motion_predict = (self.M.unsqueeze(0) @ src.permute(2, 0, 1)).permute(1, 2, 0)
-        motion_predict = motion_predict + motion_enhanced
+        #motion_enhanced = self.contextAdjuster(src.permute(1, 0, 2)).permute(1, 0, 2)
+        #motion_predict = motion_predict + motion_enhanced
+        motion_predict =  torch.clamp(motion_predict, 0, 1)
         motion_feature = torch.cat([motion_predict, last_trans_src], dim=0)
         db_features = self.ComputeDeadbandFeatures(motion_feature)
         traffic_est, traffic_class_est, transmission_est = self.dbf2traffic(db_features)
@@ -166,20 +169,24 @@ class TrafficPredictorContextAssisted(nn.Module):
         return traffic_est, traffic_class_est, transmission_est, motion_predict 
     
 class CustomLossFunction(nn.Module):
-    def __init__(self, lambda_trans=0.1, lambda_class=0.1):
+    def __init__(self, lambda_trans=0.1, lambda_class=0.1, lambda_context=0.1):
         super(CustomLossFunction, self).__init__()
         self.bce = nn.BCELoss()
         self.mse = nn.MSELoss()
+        self.mse_context = nn.MSELoss()
         self.cross_entropy = nn.CrossEntropyLoss()
         self.lambda_trans = lambda_trans
         self.lambda_class = lambda_class
+        self.lambda_context = lambda_context
 
     def forward(self, 
         outputs_traffic, traffics,
         outputs_traffic_class, traffic_class,
-        outputs_transmissions, transmissions):
+        outputs_transmissions, transmissions,
+        outputs_context, context):
         mse_loss = self.mse(outputs_traffic, traffics)
         ce_loss = self.cross_entropy(outputs_traffic_class, traffic_class)
         bce_loss = self.bce(outputs_transmissions, transmissions)       
+        mse_context_loss = self.mse_context(outputs_context, context)
 
-        return mse_loss + self.lambda_class*ce_loss + self.lambda_trans*bce_loss, mse_loss
+        return mse_loss + self.lambda_class*ce_loss + self.lambda_trans*bce_loss + self.lambda_context*mse_context_loss, mse_loss

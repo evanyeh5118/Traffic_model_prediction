@@ -40,10 +40,22 @@ class DataUnit:
         self.dimFeatures = contextData.shape[1]
 
     def getContextDataProcessed(self):
-        return self.contextDataPorcessed.copy()
+        data = self.contextDataPorcessed.copy()
+        min_values = data.min(axis=0)
+        max_values = data.max(axis=0)
+        normalizedData = (data - min_values) / (max_values - min_values)
+        if normalizedData.ndim == 1:
+            normalizedData  = normalizedData[..., np.newaxis]
+        return normalizedData
     
     def getContextDataProcessedAndSmoothed(self, fc, order): #self.contextDataPorcessed -> #self.contextDataPorcessedSmoothed
-        return smoothDataByFiltfilt(self.contextDataPorcessed, fc, 1/self.Ts, order)
+        smoothData = smoothDataByFiltfilt(self.contextDataPorcessed, fc, 1/self.Ts, order)
+        min_values = smoothData.min(axis=0)
+        max_values = smoothData.max(axis=0)
+        normalizedData = (smoothData - min_values) / (max_values - min_values)
+        if normalizedData.ndim == 1:
+            normalizedData  = normalizedData[..., np.newaxis]
+        return normalizedData
 
     def getTransmissionFlags(self):
         return self.transmitionFlags.copy()

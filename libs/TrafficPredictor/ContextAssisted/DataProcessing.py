@@ -18,6 +18,7 @@ def PreparingDatasetHelper(dataUnit, params):
 
     lenDataset = dataUnit.dataLength
     contextData = dataUnit.getContextDataProcessedAndSmoothed(smoothFc, smoothOrder)
+    #contextData = dataUnit.getContextDataProcessed()
     transmissionFlags = dataUnit.getTransmissionFlags()
 
     sources, targets, lastTranmittedContext, transmissionsVector, trafficStatesSource, trafficStatesTarget = [], [], [], [], [], []

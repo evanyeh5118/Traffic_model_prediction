@@ -5,7 +5,7 @@ import numpy as np
 from .TrafficPredictor import TrafficPredictorContextAssisted, CustomLossFunction
 from ..HelperFunctions import createDataLoaders, countModelParameters
 
-def evaluateModel(traffic_predictor, test_data, batch_size=4096, verbose=True):
+def evaluateModel(traffic_predictor, test_data, batch_size=4096):
     # Create data loader
     validation_loader = createDataLoaders(batch_size=batch_size, dataset=test_data, shuffle=False)
     
@@ -40,7 +40,7 @@ def evaluateModel(traffic_predictor, test_data, batch_size=4096, verbose=True):
         trafficTarget_actual.append(trafficsTarget.cpu().detach().numpy())
         trafficTarget_predicted.append(pred_trafficTarget.cpu().detach().numpy())
 
-        contextTarget_actual.append(sources.permute(1, 0, 2).cpu().detach().numpy())
+        contextTarget_actual.append(targets.permute(1, 0, 2).cpu().detach().numpy())
         contextTarget_predicted.append(pred_context.permute(1, 0, 2).cpu().detach().numpy())
 
     # Concatenate results from all batches
@@ -67,3 +67,21 @@ def evaluateModel(traffic_predictor, test_data, batch_size=4096, verbose=True):
     }
 
     return results
+
+
+def evaluateModelTest(test_data, batch_size=4096):
+    # Create data loader
+    validation_loader = createDataLoaders(batch_size=batch_size, dataset=test_data, shuffle=False)
+    
+    # Determine computation device
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    trafficTarget_actual, trafficTarget_predicted = [], []
+
+
+    # Iterate over validation data
+    for batch in validation_loader:
+        sources, targets, last_trans_sources, trafficsSource, trafficsTarget, classesDistribu, transmissions = (data.to(device) for data in batch)
+        trafficTarget_actual.append(trafficsTarget.cpu().detach().numpy())
+    trafficTarget_actual = np.concatenate(trafficTarget_actual)
+    return trafficTarget_actual

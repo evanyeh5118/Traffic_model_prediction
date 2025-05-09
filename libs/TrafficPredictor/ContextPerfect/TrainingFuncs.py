@@ -13,7 +13,7 @@ def getDefaultModelParams(len_source, len_target, dataset):
         "input_size":input_size,
         "output_size":output_size,
         "batch_size": 4096,
-        "hidden_size": 128,
+        "hidden_size": 64,
         "num_layers": 5,
         "dropout_rate": 0.9,
         "num_epochs": 50,

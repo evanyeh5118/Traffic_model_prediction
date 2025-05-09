@@ -46,3 +46,66 @@ def createDataLoaders(batch_size, dataset, shuffle=True):
 # Calculate total parameters
 def countModelParameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+def moving_average_smoothing_optimized(data, window_size=5):
+    """
+    Applies a moving average smoothing to a 3D tensor of shape [len, batch_size, dim]
+    without using a for-loop.
+    """
+    # Ensure data is 3D: [len, batch_size, dim]
+    assert data.ndim == 3, "Input data must be of shape [len, batch_size, dim]"
+
+    # Calculate padding size
+    pad_size = window_size // 2
+    
+    # Manually create reflection padding along the time axis (dim=0)
+    data_padded = torch.cat(
+        [data[:pad_size].flip(0), data, data[-pad_size:].flip(0)], dim=0
+    )
+    
+    # Reshape for convolution: [batch_size * dim, 1, len]
+    data_padded_reshaped = data_padded.permute(1, 2, 0).reshape(-1, 1, data_padded.size(0))
+    
+    # Applying the moving average using 1D convolution
+    kernel = torch.ones(1, 1, window_size, device=data.device) / window_size
+    smoothed_reshaped = F.conv1d(data_padded_reshaped, kernel, padding=0)
+    
+    # Reshape back to original format [len, batch_size, dim]
+    smoothed_data = smoothed_reshaped.view(data.size(1), data.size(2), -1).permute(2, 0, 1)
+    
+    # Truncate to match the original length
+    smoothed_data = smoothed_data[:data.size(0)]
+    
+    return smoothed_data
+
+def exponential_moving_average_smoothing(data, alpha=0.1):
+    """
+    Applies exponential moving average smoothing to a 3D tensor of shape [len, batch_size, dim].
+    """
+    weights = torch.pow(1 - alpha, torch.arange(data.size(0), device=data.device)).unsqueeze(1).unsqueeze(2)
+    weighted_data = data * weights
+    cumulative_sum = torch.cumsum(weighted_data, dim=0)
+    
+    normalizer = torch.cumsum(weights, dim=0)
+    smoothed_data = cumulative_sum / normalizer
+    
+    return smoothed_data
+'''
+def exponential_moving_average_smoothing(data, alpha=0.1):
+    """
+    Applies exponential moving average smoothing to a 3D tensor of shape [len, batch_size, dim].
+    """
+    smoothed_data = torch.zeros_like(data)
+    smoothed_data[0] = data[0]
+
+    for t in range(1, data.size(0)):
+        smoothed_data[t] = alpha * data[t] + (1 - alpha) * smoothed_data[t - 1]
+
+    return smoothed_data
+'''
