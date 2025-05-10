@@ -4,10 +4,8 @@ def softmax(x):
     e_x = np.exp(x - np.max(x))  # for numerical stability
     return e_x / np.sum(e_x)
 
-def compute_context_aware_transition_matrix(resultsTrain, lenWindow, alpha=1e-20):
-    classDistribu_predicted = resultsTrain["classDistribu_predicted"]
-    trafficSource = resultsTrain["trafficSource_actual"]
 
+def compute_context_aware_transition_matrix(trafficSource, classDistribu_predicted, lenWindow, alpha=1e-20):
     P = np.zeros((lenWindow + 1, lenWindow + 1))
     traffic_count = np.zeros((lenWindow + 1, 1))
 
