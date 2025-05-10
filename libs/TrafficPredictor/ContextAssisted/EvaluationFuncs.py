@@ -21,13 +21,13 @@ def evaluateModel(traffic_predictor, test_data, batch_size=4096):
 
     # Iterate over validation data
     for batch in validation_loader:
-        sources, targets, last_trans_sources, trafficsSource, trafficsTarget, classesDistribu, transmissions = (data.to(device) for data in batch)
+        sources, targets, last_trans_sources, trafficsSource, trafficsTarget, classesDistribu, transmissions, sourcesNoSmooth = (data.to(device) for data in batch)
 
         # Permute tensor dimensions for model input compatibility
-        sources, targets, last_trans_sources = map(lambda x: x.permute(1, 0, 2), (sources, targets, last_trans_sources))
+        sources, targets, last_trans_sources, sourcesNoSmooth = map(lambda x: x.permute(1, 0, 2), (sources, targets, last_trans_sources, sourcesNoSmooth))
 
         # Get model predictions
-        pred_trafficTarget, pred_classDistribu, pred_transmissions, pred_context = traffic_predictor(sources, last_trans_sources)
+        pred_trafficTarget, pred_classDistribu, pred_transmissions, pred_context = traffic_predictor(sources, last_trans_sources, sourcesNoSmooth)
 
         # Store results
         transmissions_actual.append(transmissions.cpu().detach().numpy())

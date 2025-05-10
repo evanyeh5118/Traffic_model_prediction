@@ -18,10 +18,10 @@ def PreparingDatasetHelper(dataUnit, params):
 
     lenDataset = dataUnit.dataLength
     contextData = dataUnit.getContextDataProcessedAndSmoothed(smoothFc, smoothOrder)
-    #contextData = dataUnit.getContextDataProcessed()
+    contextDataNoSmooth = dataUnit.getContextDataProcessed()
     transmissionFlags = dataUnit.getTransmissionFlags()
 
-    sources, targets, lastTranmittedContext, transmissionsVector, trafficStatesSource, trafficStatesTarget = [], [], [], [], [], []
+    sources, targets, lastTranmittedContext, transmissionsVector, trafficStatesSource, trafficStatesTarget, sourcesNoSmooth = [], [], [], [], [], [], []
     if dataAugment == True:
         idxs = [(i, FindLastTransmissionIdx(transmissionFlags, i)) 
                 for i in range(lenSource, lenDataset - lenTarget)]
@@ -36,6 +36,7 @@ def PreparingDatasetHelper(dataUnit, params):
         trafficStatesSource.append(np.sum(transmissionFlags[i-lenSource:i]))
         trafficStatesTarget.append(np.sum(transmissionFlags[i:i+lenTarget]))
         lastTranmittedContext.append(contextData[last_transmission_idx:last_transmission_idx+1])
+        sourcesNoSmooth.append(contextDataNoSmooth[i-lenSource:i])
         
     trafficClassesTarget = DiscretizedTraffic(trafficStatesTarget) #[0 ~ L]
     return (
@@ -45,7 +46,8 @@ def PreparingDatasetHelper(dataUnit, params):
         np.array(trafficStatesSource).reshape(-1,1),
         np.array(trafficStatesTarget).reshape(-1,1),
         np.array(trafficClassesTarget).reshape(-1,1),
-        np.array(transmissionsVector)
+        np.array(transmissionsVector),
+        np.array(sourcesNoSmooth)
     )
 
 def PreparingDataset(dataUnit, parameters, verbose=True):

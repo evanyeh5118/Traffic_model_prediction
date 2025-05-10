@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from .Seq2seqModel import Seq2Seq
+from .Seq2seqModel import Seq2Seq, CustomLossFunction
 from ..HelperFunctions import createDataLoaders, countModelParameters
 
 
