@@ -99,49 +99,6 @@ def compute_weighted_f1_score(predictions: np.ndarray, ground_truth: np.ndarray,
 
     return weighted_f1
 
-def generate_balanced_thresholds(arr, N):
-    if N <= 1:
-        raise ValueError("N must be greater than 1.")
-
-    # Count the frequency of each unique value
-    unique, counts = np.unique(arr, return_counts=True)
-    freq_dict = dict(zip(unique, counts))
-
-    # Sorting the unique values by their frequencies
-    sorted_values = sorted(freq_dict.keys())
-    total_samples = len(arr)
-
-    # Initialize variables for threshold calculation
-    thresholds = []
-    cum_count = 0
-    group_size = total_samples / N
-    current_group_count = 0
-    group_index = 0
-
-    # Calculate N-1 thresholds
-    for value in sorted_values:
-        cum_count += freq_dict[value]
-        current_group_count += freq_dict[value]
-
-        # Check if the current group is full
-        if current_group_count >= group_size:
-            thresholds.append(value)
-            group_index += 1
-            current_group_count = 0
-
-            # If we have enough thresholds, stop
-            if group_index == N - 1:
-                break
-
-    return thresholds
-
-
-def assign_groups(arr, thresholds):
-    group_arr = np.zeros_like(arr)
-    for i, thres in enumerate(thresholds):
-        group_arr[arr > thres] = i + 1
-
-    return group_arr
 
 
 
