@@ -99,6 +99,42 @@ def compute_weighted_f1_score(predictions: np.ndarray, ground_truth: np.ndarray,
 
     return weighted_f1
 
+def quadratic_weighted_kappa(y_true, y_pred, num_classes):
+    """
+    Calculate the Quadratic Weighted Kappa (QWK) between two ordinal series.
+    
+    Args:
+        y_true (np.array): Ground truth class labels (shape: [n_samples]).
+        y_pred (np.array): Predicted class labels (shape: [n_samples]).
+        num_classes (int): Number of possible classes (N).
+        
+    Returns:
+        float: Quadratic Weighted Kappa (QWK) score.
+    """
+    # Initialize the confusion matrix
+    conf_matrix = np.zeros((num_classes, num_classes), dtype=np.float32)
+
+    # Populate the confusion matrix
+    for t, p in zip(y_true, y_pred):
+        conf_matrix[t, p] += 1
+
+    # Calculate the weights for QWK (quadratic weights)
+    weights = np.zeros((num_classes, num_classes), dtype=np.float32)
+    for i in range(num_classes):
+        for j in range(num_classes):
+            weights[i, j] = ((i - j) ** 2) / ((num_classes - 1) ** 2)
+
+    # Expected distribution (outer product of true and predicted marginals)
+    row_marginals = np.sum(conf_matrix, axis=1)
+    col_marginals = np.sum(conf_matrix, axis=0)
+    expected = np.outer(row_marginals, col_marginals) / np.sum(conf_matrix)
+
+    # Calculate QWK
+    observed = conf_matrix / np.sum(conf_matrix)
+    expected = expected / np.sum(expected)
+    qwk = 1 - (np.sum(weights * observed) / np.sum(weights * expected))
+
+    return qwk
 
 
 

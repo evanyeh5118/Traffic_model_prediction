@@ -80,6 +80,7 @@ def generate_balanced_thresholds(arr, N):
 
     # Initialize variables for threshold calculation
     thresholds = []
+    group_ratios = []  # Store the population ratio of each group
     cum_count = 0
     group_size = total_samples / N
     current_group_count = 0
@@ -92,6 +93,7 @@ def generate_balanced_thresholds(arr, N):
         # Check if the current group is full
         if current_group_count >= group_size:
             thresholds.append(value)
+            group_ratios.append(current_group_count / total_samples)
             current_group_count = 0
 
         # Adjust the group size dynamically to ensure N-1 thresholds
@@ -106,8 +108,13 @@ def generate_balanced_thresholds(arr, N):
     # Ensure the final threshold list is exactly N-1
     while len(thresholds) < N - 1:
         thresholds.append(sorted_values[-1])
+        group_ratios.append(current_group_count / total_samples)
+        current_group_count = 0
 
-    return thresholds
+    # Add the last group's ratio
+    group_ratios.append((total_samples - sum(group_ratios) * total_samples) / total_samples)
+
+    return thresholds, group_ratios
 
 
 def assign_groups(arr, thresholds):
